@@ -1,99 +1,83 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux'
-import { StyleSheet, Text, View, Alert } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { incrementNumRecording, toggleRecording } from '../features/recording/recordingSlice'; 
 import { Accelerometer } from 'expo-sensors';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+
+import { setMessage } from '../features/logging/loggingSlice';
+import { setCSV } from '../features/csv/data';
 
 export default function Reading() {
-    const [time, setTime] = useState(0);
-    const timerRef = useRef(null);
+    const dispatch = useDispatch();
+    const isRecording = useSelector(state => state.recording.isRecording);
     const [dataLogs, setDataLogs] = useState([]);
-    const [{ x, y, z }, setData] = useState({
-      x: 0,
-      y: 0,
-      z: 0,
-    });
     const [subscription, setSubscription] = useState(null);
-  
+    const [seconds, setSeconds] = useState(0);
+
     const _subscribe = () => {
-      setSubscription(
-        Accelerometer.addListener(accelerometerData => {
-          setData(accelerometerData);
-          setDataLogs(prevLogs => [
-            ...prevLogs,
-            `${x},${y},${z},${new Date().toISOString()}`
-          ]);
-        })
-      );
+        const sub = Accelerometer.addListener(accelerometerData => {
+            setDataLogs(prevLogs => [
+                ...prevLogs, 
+                `${accelerometerData.x},${accelerometerData.y},${accelerometerData.z},${new Date().toISOString()}`
+            ]);
+        });
+        setSubscription(sub);
     };
 
-  const exportToCSV = async () => {
-    const filename = FileSystem.documentDirectory + 'accelerometer_data.csv';
-    const csvContent = 'x,y,z,timestamp\n' + dataLogs.join('\n');
-    await FileSystem.writeAsStringAsync(filename, csvContent);
-  
-    if (!(await Sharing.isAvailableAsync())) {
-      Alert.alert(`Uh oh, sharing isn't available on your platform!`);
-      return;
-    }
-  
-    await Sharing.shareAsync(filename);
-  };
-  
-
-  const _unsubscribe = async () => {
-    await exportToCSV();
-
-    if (subscription) {
-      subscription.remove();
-      setSubscription(null);
-    }
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  const isRecording = useSelector(state => state.recording.isRecording);
-const [seconds, setSeconds] = useState(0);
-
-let timer;
-useEffect(() => {
-    _subscribe()
-    if (isRecording) {
-        timer = setInterval(incrementTime, 1000);
-    }
-
-    return () => {
-        if (timer) {
-            clearInterval(timer);
+    const _unsubscribe = () => {
+        if (subscription) {
+            subscription.remove();
+            setSubscription(null);
         }
     };
-}, []);
 
-const dispatch = useDispatch()
-function incrementTime() {
-    setSeconds(prevSeconds => {
-        if (prevSeconds >= 24) { 
+    const exportToCSV = () => {
+        const csv = dataLogs.join('\n');
+        // Example action to set CSV data
+        dispatch(setCSV(csv));
+        // For logging purposeOk 
+        dispatch(setMessage(dataLogs));
+    };
+
+    useEffect(() => {
+        let timer;
+
+        if (isRecording) {
+            _subscribe();
+            timer = setInterval(() => {
+                setSeconds(prevSeconds => {
+                    if (prevSeconds === 3) {
+                        clearInterval(timer);
+                        return prevSeconds;
+                    }
+                    return prevSeconds + 1;
+                });
+            }, 1000);
+        } else {
             clearInterval(timer);
-            dispatch(incrementNumRecording())
-            dispatch(toggleRecording()) 
-            _unsubscribe()
-            return 25; 
+            _unsubscribe();
         }
-        return prevSeconds + 1;
-    });
-}
 
+        // Clean-up function
+        return () => {
+            clearInterval(timer);
+            _unsubscribe();
+        };
+    }, [isRecording]);
 
+    useEffect(() => {
+        if (seconds === 3) {
+            exportToCSV();
+            dispatch(incrementNumRecording());
+            dispatch(toggleRecording());
+        }
+    }, [seconds, dataLogs, dispatch]);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{seconds}</Text>
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            <Text style={styles.text}>{seconds}</Text>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
@@ -105,6 +89,13 @@ const styles = StyleSheet.create({
   text: {
     letterSpacing: 1,
     fontSize: 222,
+    color:  "#333333",
+    fontWeight: 600,
+    textAlign: 'center',
+  },
+  logText:{
+    letterSpacing: 1,
+    fontSize: 40,
     color:  "#333333",
     fontWeight: 600,
     textAlign: 'center',

@@ -1,9 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import recordingReducer from './features/recording/recordingSlice.js'
+import loggingReducer from './features/logging/loggingSlice.js'
+// import dataReducer from './features/data/dataSlice.js'
 
 const store = configureStore({
     reducer: {
-        recording: recordingReducer
+        recording: recordingReducer,
+        logging: loggingReducer,
+        // data: dataReducer
     }
 });
 

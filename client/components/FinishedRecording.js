@@ -1,13 +1,17 @@
 import React from 'react';
 import {Text, Image, View, StyleSheet, Dimensions } from 'react-native';
+import { useSelector } from 'react-redux';
 
 const FinishedRecording = () => {
+
+    const message = useSelector(state =>state.logging.message)
     return (
         <View style={styles.container}>
             <Image
             source={require('../assets/uploadcsv_illustration.png')}
             style={styles.image}
             />
+            <Text style={styles.text}>{message}</Text>
 <Text style={styles.text}>
     Now upload your csv to our website to receive a diagnosis
 </Text>
