@@ -1,17 +1,29 @@
 import { StyleSheet, Text, View } from 'react-native';
 // import Test2 from './components/Test2'
 // import Test from './components/Test'
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Provider } from 'react-redux';
 import store from './store'
 import Instructions from './Pages/Instructions';
+import Analysis from './Pages/Analysis';
 // import Instructions from './Pages/Instructions';
-
+const Stack = createStackNavigator();
 export default function App() {
   return (
     <Provider 
     store={store}
     >
-      <Instructions/>
+      <NavigationContainer>
+      <Stack.Navigator initialRouteName="Analysis"
+        screenOptions={{
+          headerShown: false, // This hides the header
+        }}
+      >
+        <Stack.Screen name="Instructions" component={Instructions} />
+        <Stack.Screen name="Analysis" component={Analysis} />
+      </Stack.Navigator>
+    </NavigationContainer>
     </Provider>
     
   );

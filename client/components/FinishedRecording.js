@@ -1,20 +1,77 @@
-import React from 'react';
-import {Text, Image, View, StyleSheet, Dimensions } from 'react-native';
-import { useSelector } from 'react-redux';
+import React, {useState} from 'react';
+import {View, StyleSheet, Dimensions, Text, Image } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleRecording } from '../features/recording/recordingSlice';
+import {setMessage} from '../features/logging/loggingSlice';
 
-const FinishedRecording = () => {
+import AnalyseButton from './AnalyseButton';
+import ReRecordButton from './ReRecordButton';
+import HomeButton from './HomeButton';
 
-    const message = useSelector(state =>state.logging.message)
+const FinishedRecording = ({navigation}) => {
+    const [isAnalysed, setIsAnalysed] = useState(false)
+    const [outcome, setOutcome] = useState('')
+
+    const dispatch = useDispatch()
+    const handleReRecord = () => {
+        dispatch(toggleRecording())
+    }
+
+    const csvData = useSelector(state => state.data.csv);
+    const jsonData = { csv: csvData }; // Correct JSON structure
+    const requestBody = JSON.stringify(jsonData);
+    const handleAnalyse = () => {
+        setOutcome('Analysing...')
+        setIsAnalysed(true)
+        fetch('http://gait-med.nw.r.appspot.com/',{
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            method: 'POST',
+            body: requestBody
+        })
+        .then(response => {
+            setIsAnalysed(true)
+            if(response.ok){
+                response.json().then(data => {
+                setOutcome(data.prediction)
+                setIsAnalysed(true)
+                })
+            }else{
+                setOutcome('Error')
+                setIsAnalysed(false)
+            }
+        }
+        )
+    }
+
     return (
         <View style={styles.container}>
-            <Image
-            source={require('../assets/uploadcsv_illustration.png')}
-            style={styles.image}
-            />
-            <Text style={styles.text}>{message}</Text>
-<Text style={styles.text}>
-    Now upload your csv to our website to receive a diagnosis
-</Text>
+            {!isAnalysed ?
+                <>
+                <AnalyseButton handleAnalyse={handleAnalyse}/>
+                <ReRecordButton handleReRecord={handleReRecord}/>
+            </>
+            :
+            (
+                outcome === 'normal' ? 
+            <>
+                <Image style={styles.image} source={require('../assets/GAIT.png')}/>
+                <Text style={styles.text}>
+                    {`${outcome.charAt(0).toUpperCase()} gait detected.`}
+                </Text>
+                <HomeButton navigation={navigation}/>
+            </>
+            : 
+            <>
+                <Image style={styles.image} source={require('../assets/GAIT.png')}/>
+                <Text style={styles.text}>
+                    {`${outcome.charAt(0).toUpperCase()} gait detected. You should consult a doctor.`}
+                </Text>
+                <HomeButton navigation={navigation}/>
+            </>
+            )
+            }
         </View>
     );
 };
@@ -35,6 +92,16 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         letterSpacing: 1,
         fontSize: 20,
+        color:  "#333333",
+        fontWeight: 600,
+        marginVertical: 10,
+        textAlign: 'center',
+        marginTop: 90
+    },
+    title:{
+        lineHeight: 24,
+        letterSpacing: 1,
+        fontSize: 28,
         color:  "#333333",
         fontWeight: 600,
         marginVertical: 10,

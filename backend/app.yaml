@@ -1,0 +1,11 @@
+runtime: python39
+
+env_variables:
+  MODEL_PATH: "model.pkl"
+  SCALER_PATH: "scaler.pkl"
+
+handlers:
+- url: /static
+  static_dir: static
+- url: /.*
+  script: auto

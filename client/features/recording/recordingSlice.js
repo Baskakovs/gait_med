@@ -12,10 +12,13 @@ const slice = createSlice({
         },
         incrementNumRecording: state => {
             state.numRecording =+ 1
+        },
+        setNumRecording: (state, action) => {
+            state.numRecording = action.payload
         }
     }
 });
 
-const { toggleRecording, incrementNumRecording } = slice.actions;
-export { toggleRecording, incrementNumRecording };
+const { toggleRecording, incrementNumRecording, setNumRecording } = slice.actions;
+export { toggleRecording, incrementNumRecording, setNumRecording };
 export default slice.reducer;

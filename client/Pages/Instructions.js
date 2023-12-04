@@ -6,14 +6,14 @@ import CarouselPackage from '../components/CarouselPackage';
 import Recording from '../components/Recording';
 import FinishedRecording from '../components/FinishedRecording';
 
-const Instructions = () => {
+const Instructions = ({navigation}) => {
   const isRecording = useSelector(state => state.recording.isRecording);
   const numRecording = useSelector(state => state.recording.numRecording)
 
   return (
     <View style={styles.container}>
         {
-            !isRecording ? (numRecording !== 0 ? <FinishedRecording/> : <CarouselPackage/>)
+            !isRecording ? (numRecording !== 0 ? <FinishedRecording navigation={navigation}/> : <CarouselPackage/>)
             : <Recording/>
         }
     </View>

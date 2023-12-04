@@ -1,77 +1,101 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux';
 import { StyleSheet, Text, View } from 'react-native';
 import { incrementNumRecording, toggleRecording } from '../features/recording/recordingSlice'; 
-import { Accelerometer } from 'expo-sensors';
+import { Accelerometer, Gyroscope } from 'expo-sensors';
 
 import { setMessage } from '../features/logging/loggingSlice';
-import { setCSV } from '../features/csv/data';
+import { setCSV } from '../features/csv/dataSlice';
 
 export default function Reading() {
     const dispatch = useDispatch();
     const isRecording = useSelector(state => state.recording.isRecording);
     const [dataLogs, setDataLogs] = useState([]);
-    const [subscription, setSubscription] = useState(null);
+    const [subscriptions, setSubscriptions] = useState({ accel: null, gyro: null });
     const [seconds, setSeconds] = useState(0);
 
     const _subscribe = () => {
-        const sub = Accelerometer.addListener(accelerometerData => {
-            setDataLogs(prevLogs => [
-                ...prevLogs, 
-                `${accelerometerData.x},${accelerometerData.y},${accelerometerData.z},${new Date().toISOString()}`
-            ]);
+        let accelData = 0;
+        let gyroData = 0;
+    
+        const accelSub = Accelerometer.addListener(accelerometerData => {
+            accelData = accelerometerData; 
+            updateDataLogs(accelData, gyroData);
         });
-        setSubscription(sub);
+    
+        const gyroSub = Gyroscope.addListener(gyroscopeData => {
+            gyroData = gyroscopeData; 
+            updateDataLogs(accelData, gyroData); 
+        });
+    
+        setSubscriptions({ accel: accelSub, gyro: gyroSub });
+    };
+
+    const generateSeconds = () => {
+        const date = new Date();
+        const miliSeconds = date.getMilliseconds();
+        const seconds = miliSeconds / 10000;
+        return seconds;
+    };
+    
+    const updateDataLogs = (accelerometerData, gyroscopeData) => {
+        let seconds = generateSeconds();
+        if(
+            accelerometerData.x === undefined || accelerometerData.y === undefined || accelerometerData.z === undefined ||
+            gyroscopeData.x === undefined || gyroscopeData.y === undefined || gyroscopeData.z === undefined
+        ) return;
+        setDataLogs(prevLogs => [
+            ...prevLogs,
+            `${accelerometerData.x},${accelerometerData.y},${accelerometerData.z},` +
+            `${gyroscopeData.x},${gyroscopeData.y},${gyroscopeData.z},` +
+            `${seconds}`
+        ]);
     };
 
     const _unsubscribe = () => {
-        if (subscription) {
-            subscription.remove();
-            setSubscription(null);
+        if (subscriptions.accel) {
+            subscriptions.accel.remove();
+        }
+        if (subscriptions.gyro) {
+            subscriptions.gyro.remove();
         }
     };
 
     const exportToCSV = () => {
         const csv = dataLogs.join('\n');
-        // Example action to set CSV data
         dispatch(setCSV(csv));
-        // For logging purposeOk 
-        dispatch(setMessage(dataLogs));
+        // dispatch(setMessage(dataLogs));
     };
 
     useEffect(() => {
-        let timer;
-
         if (isRecording) {
             _subscribe();
-            timer = setInterval(() => {
-                setSeconds(prevSeconds => {
-                    if (prevSeconds === 3) {
-                        clearInterval(timer);
-                        return prevSeconds;
-                    }
-                    return prevSeconds + 1;
-                });
-            }, 1000);
         } else {
-            clearInterval(timer);
             _unsubscribe();
         }
-
-        // Clean-up function
-        return () => {
-            clearInterval(timer);
-            _unsubscribe();
-        };
-    }, [isRecording]);
+    }
+    , [isRecording]);
 
     useEffect(() => {
-        if (seconds === 3) {
-            exportToCSV();
-            dispatch(incrementNumRecording());
-            dispatch(toggleRecording());
+        if (isRecording) {
+            const timer = setInterval(() => {
+                setSeconds(prevSeconds => prevSeconds + 1);
+            }, 1000);
+            return () => clearInterval(timer);
         }
-    }, [seconds, dataLogs, dispatch]);
+    }
+    , [isRecording]);
+
+    useEffect(() => {
+        if (seconds === 2) {
+            _unsubscribe();
+            exportToCSV();
+            dispatch(toggleRecording());
+            dispatch(incrementNumRecording());
+        }
+    }
+    , [seconds]);
+
 
     return (
         <View style={styles.container}>
