@@ -3,6 +3,8 @@ import {View, StyleSheet, Dimensions, Text, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleRecording } from '../features/recording/recordingSlice';
 import {setMessage} from '../features/logging/loggingSlice';
+import Icon from 'react-native-vector-icons/FontAwesome';
+
 
 import AnalyseButton from './AnalyseButton';
 import ReRecordButton from './ReRecordButton';
@@ -46,30 +48,36 @@ const FinishedRecording = ({navigation}) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles.buttonContainer}>
             {!isAnalysed ?
                 <>
-                <AnalyseButton handleAnalyse={handleAnalyse}/>
-                <ReRecordButton handleReRecord={handleReRecord}/>
-            </>
+                    <AnalyseButton handleAnalyse={handleAnalyse}/>
+                    <ReRecordButton handleReRecord={handleReRecord}/>
+                </>
             :
+            (
+                outcome === 'Analysing...' ?
+                <Text style={styles.text}>
+                    {`${outcome}`}
+                </Text>
+                :
             (
                 outcome === 'normal' ? 
             <>
                 <Image style={styles.image} source={require('../assets/GAIT.png')}/>
                 <Text style={styles.text}>
-                    {`${outcome.charAt(0).toUpperCase()} gait detected.`}
+                    {`${outcome} gait detected.`}
                 </Text>
                 <HomeButton navigation={navigation}/>
             </>
             : 
             <>
-                <Image style={styles.image} source={require('../assets/GAIT.png')}/>
+                <Icon name="exclamation-triangle" size={200} color="#0284c7" />
                 <Text style={styles.text}>
-                    {`${outcome.charAt(0).toUpperCase()} gait detected. You should consult a doctor.`}
+                    {`${outcome.charAt(0).toUpperCase() + outcome.slice(1)} gait detected. You should consult a doctor.`}
                 </Text>
-                <HomeButton navigation={navigation}/>
             </>
+            )
             )
             }
         </View>
@@ -96,7 +104,9 @@ const styles = StyleSheet.create({
         fontWeight: 600,
         marginVertical: 10,
         textAlign: 'center',
-        marginTop: 90
+        marginTop: 90,
+        fontWeight: 'bold',
+        paddingHorizontal: 20
     },
     title:{
         lineHeight: 24,
@@ -107,7 +117,18 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         textAlign: 'center',
         marginTop: 90
-    }
+    },
+    image: {
+        width: Dimensions.get('window').width,
+        height: 0.6 * Dimensions.get('window').height,
+    },
+    buttonContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        marginTop: 15,
+      },
 })
 
 

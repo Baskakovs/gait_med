@@ -15,9 +15,9 @@ export default function App() {
     store={store}
     >
       <NavigationContainer>
-      <Stack.Navigator initialRouteName="Analysis"
+      <Stack.Navigator initialRouteName="Instructions"
         screenOptions={{
-          headerShown: false, // This hides the header
+          headerShown: false,
         }}
       >
         <Stack.Screen name="Instructions" component={Instructions} />

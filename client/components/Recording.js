@@ -87,7 +87,7 @@ export default function Reading() {
     , [isRecording]);
 
     useEffect(() => {
-        if (seconds === 2) {
+        if (seconds === 25) {
             _unsubscribe();
             exportToCSV();
             dispatch(toggleRecording());

@@ -19,7 +19,7 @@ const HomeButton = ({navigation}) => {
             <View style={styles.container}>
                 <Button 
                     title={"Return Home"}
-                    onPress={()=> navigation.navigate('Instructions')}
+                    onPress={navigation.navigate('Instructions')}
                 />
         </View>
         
